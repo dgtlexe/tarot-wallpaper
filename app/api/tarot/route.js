@@ -129,8 +129,8 @@ export async function GET() {
         >
           <img
             src={card.img}
-            width={340}
-            height={580}
+            width={420}
+            height={716}
             style={{
               filter: 'grayscale(100%) brightness(0.75) contrast(1.15)',
               borderRadius: '6px',
