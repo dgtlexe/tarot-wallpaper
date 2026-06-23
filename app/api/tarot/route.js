@@ -95,31 +95,9 @@ const DECK = [
 ];
 
 export async function GET() {
-  // Pick a random card
   const card = DECK[Math.floor(Math.random() * DECK.length)];
-
-  // 50/50 reversal
   const reversed = Math.random() < 0.5;
   const meaning = reversed ? card.rev : card.up;
-
-  // Attempt to fetch card image
-  let imgSrc = null;
-  try {
-    const res = await fetch(card.img, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TarotWallpaper/1.0)' },
-    });
-    if (res.ok) {
-      const buf = await res.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      imgSrc = `data:image/jpeg;base64,${btoa(binary)}`;
-    }
-  } catch (_) {
-    // fall through to text-only layout
-  }
 
   const W = 1179;
   const H = 2556;
@@ -137,33 +115,30 @@ export async function GET() {
           justifyContent: 'center',
           fontFamily: 'Georgia, "Times New Roman", serif',
           padding: '100px 80px',
-          gap: '0px',
           boxSizing: 'border-box',
         }}
       >
-        {/* Card image */}
-        {imgSrc && (
-          <div
+        {/* Card image — passed directly as URL, @vercel/og fetches it */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '56px',
+            transform: reversed ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          <img
+            src={card.img}
+            width={340}
+            height={580}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '56px',
-              transform: reversed ? 'rotate(180deg)' : 'rotate(0deg)',
+              filter: 'grayscale(100%) brightness(0.75) contrast(1.15)',
+              borderRadius: '6px',
+              opacity: 0.9,
             }}
-          >
-            <img
-              src={imgSrc}
-              width={340}
-              height={580}
-              style={{
-                filter: 'grayscale(100%) brightness(0.75) contrast(1.15)',
-                borderRadius: '6px',
-                opacity: 0.9,
-              }}
-            />
-          </div>
-        )}
+          />
+        </div>
 
         {/* Text block */}
         <div
@@ -176,7 +151,6 @@ export async function GET() {
             textAlign: 'center',
           }}
         >
-          {/* REVERSED label */}
           {reversed && (
             <div
               style={{
@@ -184,40 +158,38 @@ export async function GET() {
                 letterSpacing: '0.35em',
                 color: '#4a4a4a',
                 textTransform: 'uppercase',
-                fontFamily: 'Georgia, serif',
+                display: 'flex',
               }}
             >
               reversed
             </div>
           )}
 
-          {/* Card name */}
           <div
             style={{
-              fontSize: imgSrc ? '54px' : '72px',
+              fontSize: '54px',
               color: '#ddd5c4',
               lineHeight: 1.1,
               fontWeight: 'normal',
               letterSpacing: '0.02em',
+              display: 'flex',
             }}
           >
             {card.name}
           </div>
 
-          {/* Arcana + number */}
           <div
             style={{
               fontSize: '20px',
               color: '#3a3a3a',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
+              display: 'flex',
             }}
           >
-            {card.arcana}
-            {card.num ? `  ·  ${card.num}` : ''}
+            {card.arcana}{card.num ? `  ·  ${card.num}` : ''}
           </div>
 
-          {/* Thin divider */}
           <div
             style={{
               width: '60px',
@@ -228,14 +200,15 @@ export async function GET() {
             }}
           />
 
-          {/* Meaning */}
           <div
             style={{
               fontSize: '26px',
               color: '#606060',
               lineHeight: 1.6,
               fontStyle: 'italic',
-              letterSpacing: '0.01em',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
             }}
           >
             {meaning}
