@@ -94,11 +94,186 @@ const DECK = [
   { name:'King of Pentacles',    arcana:'Minor Arcana · Pentacles', img:`${BASE}Pentacles14.jpg`, up:'wealth, business, leadership, security, discipline, abundance',  rev:'financially inept, obsessed with wealth, stubborn, corruption' },
 ];
 
-export async function GET() {
-  const card = DECK[Math.floor(Math.random() * DECK.length)];
-  const reversed = Math.random() < 0.5;
+// Deterministic pseudo-random from a seed — ensures same ?t value
+// always produces the same card and reversal in both wallpaper + share modes
+function seededRandom(seed) {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const t = parseInt(searchParams.get('t') || '0');
+  const isShare = searchParams.get('share') === 'true';
+
+  // Use seeded random when ?t is present so wallpaper + share card always match
+  const rand1 = t ? seededRandom(t) : Math.random();
+  const rand2 = t ? seededRandom(t + 99999) : Math.random();
+
+  const card = DECK[Math.floor(rand1 * DECK.length)];
+  const reversed = rand2 < 0.5;
   const meaning = reversed ? card.rev : card.up;
 
+  // ── SHARE IMAGE (Instagram Stories 1080×1920) ────────────────────────────
+  if (isShare) {
+    const W = 1080;
+    const H = 1920;
+
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: W,
+            height: H,
+            background: '#080808',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            padding: '100px 80px 80px',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Top: arcana label */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '26px',
+                letterSpacing: '0.3em',
+                color: '#3a3a3a',
+                textTransform: 'uppercase',
+                display: 'flex',
+              }}
+            >
+              {card.arcana}{card.num ? `  ·  ${card.num}` : ''}
+            </div>
+            {reversed && (
+              <div
+                style={{
+                  fontSize: '18px',
+                  letterSpacing: '0.4em',
+                  color: '#4a3a30',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                }}
+              >
+                reversed
+              </div>
+            )}
+          </div>
+
+          {/* Card image */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: reversed ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          >
+            <img
+              src={card.img}
+              width={400}
+              height={682}
+              style={{
+                filter: 'grayscale(100%) brightness(0.75) contrast(1.15)',
+                borderRadius: '8px',
+                opacity: 0.9,
+              }}
+            />
+          </div>
+
+          {/* Bottom: name + meaning + watermark */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px',
+              maxWidth: '880px',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '62px',
+                color: '#ddd5c4',
+                lineHeight: 1.1,
+                fontWeight: 'normal',
+                letterSpacing: '0.02em',
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}
+            >
+              {card.name}
+            </div>
+
+            <div
+              style={{
+                width: '50px',
+                height: '1px',
+                background: '#2a2a2a',
+                display: 'flex',
+              }}
+            />
+
+            <div
+              style={{
+                fontSize: '26px',
+                color: '#555',
+                lineHeight: 1.65,
+                fontStyle: 'italic',
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+              }}
+            >
+              {meaning}
+            </div>
+
+            {/* Watermark */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                marginTop: '10px',
+                opacity: 0.2,
+              }}
+            >
+              <span style={{ color: '#ddd5c4', fontSize: '28px', display: 'flex' }}>✦</span>
+              <span style={{ color: '#ddd5c4', fontSize: '36px', display: 'flex' }}>☽</span>
+              <span
+                style={{
+                  color: '#ddd5c4',
+                  fontSize: '22px',
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                }}
+              >
+                the pull
+              </span>
+              <span style={{ color: '#ddd5c4', fontSize: '36px', display: 'flex' }}>☾</span>
+              <span style={{ color: '#ddd5c4', fontSize: '28px', display: 'flex' }}>✦</span>
+            </div>
+          </div>
+        </div>
+      ),
+      { width: W, height: H }
+    );
+  }
+
+  // ── WALLPAPER (existing layout) ──────────────────────────────────────────
   const W = 1179;
   const H = 2556;
 
